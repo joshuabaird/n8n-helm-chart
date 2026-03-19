@@ -73,6 +73,19 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 {{- end }}
 
+{{/* Worker PVC - uses worker.persistence if set, falls back to emptyDir */}}
+{{- define "n8n.worker.pvc" -}}
+{{- if or (not .Values.worker.persistence.enabled) (eq .Values.worker.persistence.type "emptyDir") -}}
+          emptyDir: {}
+{{- else if and .Values.worker.persistence.enabled .Values.worker.persistence.existingClaim -}}
+          persistentVolumeClaim:
+            claimName: {{ .Values.worker.persistence.existingClaim }}
+{{- else if and .Values.worker.persistence.enabled (eq .Values.worker.persistence.type "dynamic")  -}}
+          persistentVolumeClaim:
+            claimName: {{ include "n8n.fullname" . }}-worker
+{{- end }}
+{{- end }}
+
 
 {{/* Create environment variables from yaml tree */}}
 {{- define "toEnvVars" -}}
